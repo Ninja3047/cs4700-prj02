@@ -144,7 +144,7 @@ struct arguments
     int mode;
     char* port;
     char* hostname;
-    char filename[256];
+    char filename[255];
 };
 
 static error_t parse_opt(int key, char* arg, struct argp_state* state) {
@@ -160,7 +160,7 @@ static error_t parse_opt(int key, char* arg, struct argp_state* state) {
             arguments->hostname = arg;
             break;
         case 'f':
-            strncpy(arguments->filename, arg, 256);
+            strncpy(arguments->filename, arg, 255);
             break;
         //case ARGP_KEY_END:
         //    argp_usage(state);
@@ -179,7 +179,7 @@ int main(int argc, char* argv[])
     arguments.mode = 0;
     arguments.port = "15180";
     arguments.hostname = "127.0.0.1";
-    memset(arguments.filename, 0, 256);
+    memset(arguments.filename, 0, 255);
 
     static struct argp_option options[] = {
         {"mode", 'm', "MODE", 0, "Mode", 0},
