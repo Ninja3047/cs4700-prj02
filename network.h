@@ -13,10 +13,12 @@
 #define DATA 0x01
 #define ACK 0x11
 #define MAX_SEGMENT_SIZE 1500
+#define MAX_RETRIES 3
+#define TIMEOUT 500
 
 struct __attribute__((__packed__)) init {
     char filename[MAX_FILENAME_LENGTH];
-    unsigned long size;
+    long size;
     int mode;
     unsigned long seq_num;
 };
