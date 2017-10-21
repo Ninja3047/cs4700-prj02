@@ -8,7 +8,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-#define MAX_FILENAME_LENGTH 255
+#define MAX_FILENAME_LENGTH 245
 #define INIT 0x00
 #define DATA 0x01
 #define ACK 0x11
