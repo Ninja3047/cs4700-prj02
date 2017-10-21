@@ -36,6 +36,9 @@
 *.x86_64
 *.hex
 
+receiver
+sender
+
 # Debug files
 *.dSYM/
 *.su
