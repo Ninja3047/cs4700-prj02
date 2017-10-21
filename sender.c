@@ -65,9 +65,10 @@ void print_packet(const void *packet, int size) {
 // Construct and send data packet
 int send_data(int sockfd, long seq_num, int size, char* bytes) {
     struct data* data = malloc(sizeof(struct data) + size);
-    struct packet* packet = malloc(sizeof(struct packet) + size);
+    int data_packet_size = sizeof(struct data) + sizeof(char) + size;
+    struct packet* packet = malloc(data_packet_size);
     memset(data, 0, sizeof(struct data) + size);
-    memset(packet, 0, sizeof(struct packet) + size);
+    memset(packet, 0, data_packet_size);
 
     memcpy(&data->bytes, bytes, size);
     data->size = size;
@@ -76,8 +77,9 @@ int send_data(int sockfd, long seq_num, int size, char* bytes) {
     packet->type = DATA;
     memcpy(&packet->payload, data, sizeof(struct data) + size);
 
-    int sizesent = send(sockfd, packet, sizeof(struct packet) + size, 0);
     print_packet(packet, data_packet_size);
+
+    int sizesent = send(sockfd, packet, data_packet_size, 0);
     if (sizesent == -1) {
         fprintf(stderr, "Weird error\n");
     }
@@ -89,20 +91,22 @@ int send_data(int sockfd, long seq_num, int size, char* bytes) {
 }
 
 // Sender implementation
-void start_sender(int mode, const char* port, const char* hostname, const char filename[256]) {
+void start_sender(int mode, const char* port, const char* hostname,
+                  const char filename[MAX_FILENAME_LENGTH]) {
     int sockfd = create_connection(hostname, port, SOCK_DGRAM, IPPROTO_UDP);
 
     printf("Mode: %d\nPort: %s\nHostname: %s\nFilename: %s\n",
            mode, port, hostname, filename);
 
     // fake file
-    int size = 1224 * 5;
+    //int size = 1224 * 5;
+    unsigned long size = 276;
     char file[size];
-    for (int i = 0; i < size; i++) {
+    for (unsigned long i = 0; i < size; i++) {
         file[i] = 'A';
     }
     // offset of file
-    int offset = 0;
+    unsigned long offset = 0;
     // sequence number
     unsigned long seq_num = 0;
     // sequence number base
@@ -119,7 +123,9 @@ void start_sender(int mode, const char* port, const char* hostname, const char f
 
     // create packet struct on the heap
     struct packet* packet = malloc(MAX_SEGMENT_SIZE);
-    memset(packet, 0, MAX_SEGMENT_SIZE);
+
+
+    unsigned long max_data_size = MAX_SEGMENT_SIZE - sizeof(struct data) - 1;
 
     while (offset < size) {
         // Wait for ack here
@@ -132,8 +138,7 @@ void start_sender(int mode, const char* port, const char* hostname, const char f
             fprintf(stderr, "Weird polling error\n");
         } else if (ret == 0) {
             printf("Took longer than 500ms\n");
-            // TODO resend here
-            // Also keep track of how many times we had to resend
+            // TODO Also keep track of how many times we had to resend
         } else {
             recv(sockfd, packet, MAX_SEGMENT_SIZE, 0);
             switch (packet->type) {
@@ -144,18 +149,19 @@ void start_sender(int mode, const char* port, const char* hostname, const char f
                     printf("Received ack: %lu\n", seq_base);
                     break;
                 default:
-                    fprintf(stderr, "Received unknown packet");
+                    fprintf(stderr, "Received unknown packet\n");
             }
         }
 
         printf("seq_base = %ld seq_num = %ld seq_max = %ld\n", seq_base, seq_num, seq_max);
 
-        if (seq_base <= seq_num && seq_num <= seq_max) {
+        offset = seq_num * max_data_size;
+
+        if (offset < size && seq_base <= seq_num && seq_num <= seq_max) {
             // Calculate how much data should be sent
-            int send_size = MAX_SEGMENT_SIZE - sizeof(struct packet);
-            offset = (send_size < size - offset) ? seq_num * send_size : size;
+            unsigned long send_size = (size < max_data_size) ? size : max_data_size;
             int sent = 0;
-            printf("Sending %d data\n", send_size);
+            printf("Sending %lu bytes\nOffset: %lu\n", send_size, offset);
             if ((sent = send_data(sockfd, seq_num++, send_size, file + offset)) <= 0) {
                 fprintf(stderr, "Something went wrong went sending");
             }
@@ -169,7 +175,7 @@ struct arguments
     int mode;
     char* port;
     char* hostname;
-    char filename[255];
+    char filename[MAX_FILENAME_LENGTH];
 };
 
 static error_t parse_opt(int key, char* arg, struct argp_state* state) {
@@ -185,7 +191,7 @@ static error_t parse_opt(int key, char* arg, struct argp_state* state) {
             arguments->hostname = arg;
             break;
         case 'f':
-            strncpy(arguments->filename, arg, 255);
+            strncpy(arguments->filename, arg, MAX_FILENAME_LENGTH);
             break;
         //case ARGP_KEY_END:
         //    argp_usage(state);
@@ -204,7 +210,7 @@ int main(int argc, char* argv[])
     arguments.mode = 0;
     arguments.port = "15180";
     arguments.hostname = "127.0.0.1";
-    memset(arguments.filename, 0, 255);
+    memset(arguments.filename, 0, MAX_FILENAME_LENGTH);
 
     static struct argp_option options[] = {
         {"mode", 'm', "MODE", 0, "Mode", 0},
