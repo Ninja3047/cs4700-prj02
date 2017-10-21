@@ -1,0 +1,12 @@
+
+# Testing
+
+1. Test mismatched window sizes
+2. Test sending the same ack every time
+3. Test randomly dropping packets
+4. Test sending image
+5. Test sending large file
+6. Test different hosts
+7. Test disconnecting
+8. Test disconnecting and reconnecting
+9. 
