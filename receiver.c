@@ -1,4 +1,6 @@
 #include <argp.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include "network.h"
 
 
@@ -32,7 +34,11 @@ void start_receiver(int mode, const char* port, const char* hostname) {
 
     // temps
     struct sockaddr src_addr;
-    socklen_t addrlen;
+    socklen_t addrlen = sizeof(src_addr);
+    memset(&src_addr, 0, addrlen);
+
+    // file
+    FILE *file;
 
     while (recvfrom(sockfd, packet, MAX_SEGMENT_SIZE, 0,
                     &src_addr, &addrlen)) {
@@ -43,12 +49,17 @@ void start_receiver(int mode, const char* port, const char* hostname) {
                     fprintf(stderr, "Mode mismatch\n");
                     exit(EXIT_FAILURE);
                 }
-                // create empty file here to write to
-                next_seq_num = packet->payload.init.seq_num + 1;
-                printf("Sending ack?\n");
+                char buffer[MAX_FILENAME_LENGTH + 10];
+                snprintf(buffer, MAX_FILENAME_LENGTH + 10, "%s%d",
+                         packet->payload.init.filename, getpid());
+                printf("Created file %s\n", buffer);
+                file = fopen(buffer, "w+");
+                // TODO handle weird file errors
+                next_seq_num = packet->payload.init.seq_num;
+                // TODO refactor error handling into send_ack
                 int send_size = send_ack(sockfd, &src_addr, addrlen, next_seq_num);
-                if (send_size <=0) {
-                    printf("%d", send_size);
+                if (send_size == -1) {
+                    fprintf(stderr, "%s\n", strerror(errno));
                 }
                 break;
             case DATA:
@@ -57,6 +68,10 @@ void start_receiver(int mode, const char* port, const char* hostname) {
                     printf("Received Data Seq: %ld\n", packet->payload.data.seq_num);
                     next_seq_num = packet->payload.data.seq_num + 1;
                     // Write to disk here
+                    // TODO handle weird file errors
+                    fwrite(packet->payload.data.bytes, sizeof(char),
+                           packet->payload.data.size, file);
+                    fflush(file);
                 } else {
                     printf("Seq already seen: %ld\n", packet->payload.data.seq_num);
                 }
