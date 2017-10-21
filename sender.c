@@ -148,7 +148,7 @@ struct arguments
 };
 
 static error_t parse_opt(int key, char* arg, struct argp_state* state) {
-    struct arguments* arguments = state-> input;
+    struct arguments* arguments = state->input;
     switch (key) {
         case 'm':
             arguments->mode = atoi(arg);
