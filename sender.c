@@ -1,6 +1,7 @@
 #include <poll.h>
 #include <argp.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "network.h"
 
 
@@ -63,7 +64,7 @@ void print_packet(const void *packet, int size) {
 }
 
 // Construct and send data packet
-int send_data(int sockfd, long seq_num, int size, char* bytes) {
+int send_data(int sockfd, unsigned long seq_num, int size, char* bytes) {
     struct data* data = malloc(sizeof(struct data) + size);
     int data_packet_size = sizeof(struct data) + sizeof(char) + size;
     struct packet* packet = malloc(data_packet_size);
@@ -91,9 +92,16 @@ int send_data(int sockfd, long seq_num, int size, char* bytes) {
 }
 
 long file_size(FILE* file) {
-    fseek(file, 0, SEEK_END);
+    if (fseek(file, 0, SEEK_END) == -1) {
+        fprintf(stderr, "%s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
     long size = ftell(file);
-    fseek(file, 0, SEEK_SET);
+    if (size == -1) {
+        fprintf(stderr, "%s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+    rewind(file);
     return size;
 }
 
@@ -107,6 +115,10 @@ void start_sender(int mode, const char* port, const char* hostname,
 
     FILE* file;
     file = fopen(filename, "r+");
+    if (file == NULL) {
+        fprintf(stderr, "%s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
     long size = file_size(file);
     // offset of file
     long offset = 0;
@@ -118,9 +130,10 @@ void start_sender(int mode, const char* port, const char* hostname,
     unsigned long seq_max = mode;
 
     struct pollfd fds;
-
     fds.fd = sockfd;
     fds.events = POLLIN;
+
+    int retries = 0;
 
     send_init(sockfd, filename, size, mode, seq_num);
 
@@ -133,13 +146,18 @@ void start_sender(int mode, const char* port, const char* hostname,
     while (offset < size) {
         // Wait for ack here
         memset(packet, 0, MAX_SEGMENT_SIZE);
-        int ret = poll(&fds, 1, 500); // TODO Change to define
+        int ret = poll(&fds, 1, TIMEOUT);
         if (ret == -1) {
             fprintf(stderr, "Weird polling error\n");
         } else if (ret == 0) {
+            if (retries > MAX_RETRIES) {
+                fprintf(stderr, "Error: Unable to reach receiver\n");
+                exit(EXIT_FAILURE);
+            }
             printf("Took longer than 500ms\n");
-            // TODO Also keep track of how many times we timed out
+            retries++;
         } else {
+            retries = 0;
             recv(sockfd, packet, MAX_SEGMENT_SIZE, 0);
             switch (packet->type) {
                 case ACK:
@@ -172,6 +190,10 @@ void start_sender(int mode, const char* port, const char* hostname,
             printf("Sent %d bytes with seq: %lu\n", sent, seq_num);
         }
     }
+
+    free(packet);
+    close(sockfd);
+    fclose(file);
 }
 
 struct arguments
