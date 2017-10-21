@@ -1,5 +1,6 @@
 #include <poll.h>
 #include <argp.h>
+#include <stdlib.h>
 #include "network.h"
 
 
@@ -30,12 +31,35 @@ int send_init(int sockfd, const char filename[MAX_FILENAME_LENGTH],
 void print_packet(const void *packet, int size) {
     char* bytes = (char*) packet;
 
-    printf("Packet: \n");
+    printf("Total size: %d\n", size);
 
+    int written = 0, last = 0;
     for (int i = 0; i < size; i++) {
-        printf("%c", bytes[i]);
+        unsigned char uc = bytes[i];
+        if (i % 16 == 0)
+            printf("0x%04x:   ", i);
+        written += printf("%02x", uc);
+        if ((i + 1) % 2 == 0)
+            written += printf(" ");
+        if ((i + 1) % 16 == 0 || i == size-1) {
+            if (i == size - 1)
+                 last = i + 1 - (i + 1) % 16;
+            else
+                last = i - 15;
+            for (int j = written; j < 40; j++)
+                printf(" ");
+            written = 0;
+            printf("\t");
+            for (int j = last; j <= i; j++) {
+                if (bytes[j] < 32)
+                    printf(".");
+                else
+                    printf("%c", bytes[j]);
+            }
+            printf("\n");
+        }
     }
-    printf("\n");
+    printf("\n\n");
 }
 
 // Construct and send data packet
@@ -53,6 +77,7 @@ int send_data(int sockfd, long seq_num, int size, char* bytes) {
     memcpy(&packet->payload, data, sizeof(struct data) + size);
 
     int sizesent = send(sockfd, packet, sizeof(struct packet) + size, 0);
+    print_packet(packet, data_packet_size);
     if (sizesent == -1) {
         fprintf(stderr, "Weird error\n");
     }
