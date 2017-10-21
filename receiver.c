@@ -40,9 +40,13 @@ void start_receiver(int mode, const char* port, const char* hostname) {
     // file
     FILE* file;
     long offset = 0;
+    int bytes = 0;
     long max_data_size = MAX_SEGMENT_SIZE - sizeof(struct data) - sizeof(char);
 
-    while (recvfrom(sockfd, packet, MAX_SEGMENT_SIZE, 0,
+    long size = 1;
+
+    while (offset + bytes < size &&
+           recvfrom(sockfd, packet, MAX_SEGMENT_SIZE, 0,
                     &src_addr, &addrlen)) {
         switch (packet->type) {
             case INIT:
@@ -55,6 +59,7 @@ void start_receiver(int mode, const char* port, const char* hostname) {
                 snprintf(buffer, MAX_FILENAME_LENGTH + 10, "%s%d",
                          packet->payload.init.filename, getpid());
                 printf("Created file %s\n", buffer);
+                size = packet->payload.init.size;
                 file = fopen(buffer, "w+");
                 // TODO handle weird file errors
                 next_seq_num = packet->payload.init.seq_num;
@@ -72,6 +77,7 @@ void start_receiver(int mode, const char* port, const char* hostname) {
                     // Write to disk here
                     // TODO handle weird file errors
                     offset = packet->payload.data.seq_num * max_data_size;
+                    bytes = packet->payload.data.size;
                     fseek(file, offset, SEEK_SET);
                     fwrite(packet->payload.data.bytes, sizeof(char),
                            packet->payload.data.size, file);
@@ -90,6 +96,8 @@ void start_receiver(int mode, const char* port, const char* hostname) {
     }
 
     free(packet);
+    fclose(file);
+    close(sockfd);
 }
 
 struct arguments
