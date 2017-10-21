@@ -38,7 +38,9 @@ void start_receiver(int mode, const char* port, const char* hostname) {
     memset(&src_addr, 0, addrlen);
 
     // file
-    FILE *file;
+    FILE* file;
+    long offset = 0;
+    long max_data_size = MAX_SEGMENT_SIZE - sizeof(struct data) - sizeof(char);
 
     while (recvfrom(sockfd, packet, MAX_SEGMENT_SIZE, 0,
                     &src_addr, &addrlen)) {
@@ -69,6 +71,8 @@ void start_receiver(int mode, const char* port, const char* hostname) {
                     next_seq_num = packet->payload.data.seq_num + 1;
                     // Write to disk here
                     // TODO handle weird file errors
+                    offset = packet->payload.data.seq_num * max_data_size;
+                    fseek(file, offset, SEEK_SET);
                     fwrite(packet->payload.data.bytes, sizeof(char),
                            packet->payload.data.size, file);
                     fflush(file);
