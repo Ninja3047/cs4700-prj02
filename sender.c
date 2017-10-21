@@ -90,6 +90,13 @@ int send_data(int sockfd, long seq_num, int size, char* bytes) {
     return sizesent;
 }
 
+long file_size(FILE* file) {
+    fseek(file, 0, SEEK_END);
+    long size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+    return size;
+}
+
 // Sender implementation
 void start_sender(int mode, const char* port, const char* hostname,
                   const char filename[MAX_FILENAME_LENGTH]) {
@@ -98,15 +105,11 @@ void start_sender(int mode, const char* port, const char* hostname,
     printf("Mode: %d\nPort: %s\nHostname: %s\nFilename: %s\n",
            mode, port, hostname, filename);
 
-    // fake file
-    //int size = 1224 * 5;
-    unsigned long size = 276;
-    char file[size];
-    for (unsigned long i = 0; i < size; i++) {
-        file[i] = 'A';
-    }
+    FILE* file;
+    file = fopen(filename, "r+");
+    long size = file_size(file);
     // offset of file
-    unsigned long offset = 0;
+    long offset = 0;
     // sequence number
     unsigned long seq_num = 0;
     // sequence number base
@@ -125,20 +128,17 @@ void start_sender(int mode, const char* port, const char* hostname,
     struct packet* packet = malloc(MAX_SEGMENT_SIZE);
 
 
-    unsigned long max_data_size = MAX_SEGMENT_SIZE - sizeof(struct data) - 1;
+    long max_data_size = MAX_SEGMENT_SIZE - sizeof(struct data) - sizeof(char);
 
     while (offset < size) {
         // Wait for ack here
         memset(packet, 0, MAX_SEGMENT_SIZE);
-        // TODO don't block here
-        // We need to time out if last_ack
-        // hasn't been updated for a while
         int ret = poll(&fds, 1, 500); // TODO Change to define
         if (ret == -1) {
             fprintf(stderr, "Weird polling error\n");
         } else if (ret == 0) {
             printf("Took longer than 500ms\n");
-            // TODO Also keep track of how many times we had to resend
+            // TODO Also keep track of how many times we timed out
         } else {
             recv(sockfd, packet, MAX_SEGMENT_SIZE, 0);
             switch (packet->type) {
@@ -159,10 +159,14 @@ void start_sender(int mode, const char* port, const char* hostname,
 
         if (offset < size && seq_base <= seq_num && seq_num <= seq_max) {
             // Calculate how much data should be sent
-            unsigned long send_size = (size < max_data_size) ? size : max_data_size;
+            long send_size = (size - offset < max_data_size) ? size % max_data_size : max_data_size;
             int sent = 0;
             printf("Sending %lu bytes\nOffset: %lu\n", send_size, offset);
-            if ((sent = send_data(sockfd, seq_num++, send_size, file + offset)) <= 0) {
+            fseek(file, offset, SEEK_SET);
+            char buf[send_size];
+            memset(buf, 0, send_size);
+            fread(buf, sizeof(char), send_size, file);
+            if ((sent = send_data(sockfd, seq_num++, send_size, buf)) <= 0) {
                 fprintf(stderr, "Something went wrong went sending");
             }
             printf("Sent %d bytes with seq: %lu\n", sent, seq_num);
