@@ -1,3 +1,4 @@
+#include <argp.h>
 #include "network.h"
 
 
@@ -72,9 +73,52 @@ void start_receiver(int mode, const char* port, const char* hostname) {
     free(packet);
 }
 
-int main(int argc, char const* argv[])
+struct arguments
 {
-    start_receiver(1, "1337", "127.0.0.1");
+    int mode;
+    char* port;
+    char* hostname;
+    char filename[255];
+};
+
+static error_t parse_opt(int key, char* arg, struct argp_state* state) {
+    struct arguments* arguments = state->input;
+    switch (key) {
+        case 'm':
+            arguments->mode = atoi(arg);
+            break;
+        case 'p':
+            arguments->hostname = arg;
+            break;
+        case 'h':
+            arguments->hostname = arg;
+            break;
+        default:
+            return ARGP_ERR_UNKNOWN;
+    }
+
+    return 0;
+}
+
+int main(int argc, char* argv[])
+{
+    struct arguments arguments;
+    memset(&arguments, 0, sizeof(arguments));
+    arguments.mode = 0;
+    arguments.port = "15180";
+    arguments.hostname = "127.0.0.1";
+
+    static struct argp_option options[] = {
+        {"mode", 'm', "MODE", 0, "Mode", 0},
+        {"port", 'p', "PORT", 0, "Mode", 0},
+        {"hostname", 'h', "HOSTNAME", 0, "Hostname", 0},
+        {0}
+    };
+
+    struct argp argp = { options, parse_opt, "", 0, 0, 0, 0};
+    argp_parse(&argp, argc, argv, 0, 0, &arguments);
+
+    start_receiver(arguments.mode, arguments.port, arguments.hostname);
 
     return 0;
 }
