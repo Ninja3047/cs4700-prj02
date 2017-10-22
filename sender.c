@@ -236,7 +236,7 @@ int main(int argc, char* argv[])
 {
     struct arguments arguments;
     memset(&arguments, 0, sizeof(arguments));
-    arguments.mode = 0;
+    arguments.mode = 1;
     arguments.port = "15180";
     arguments.hostname = "127.0.0.1";
     memset(arguments.filename, 0, MAX_FILENAME_LENGTH);
