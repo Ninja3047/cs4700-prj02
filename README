@@ -1,3 +1,27 @@
+# How to use
+`./sender -m <mode> -p <port> -h <hostname> -f <filename>`
+Mode is an integer greater than 1 (defaults to 1)
+Port is a valid port number (defaults to 15180)
+This must match the receiver port
+Hostname is the host to send to (defaults to 127.0.0.1)
+Filename is the file to send (defaults to README)
+
+`./receiver -m <mode> -p <port> -h <hostname>`
+Mode is an integer greater than 1 (defaults to 1)
+This must match the sender mode
+Port is a valid port number to listen on
+Hostname is the host to listen on (defaults to 127.0.0.1)
+This should match the hostname of the system you are on
+
+# Examples
+
+`./sender -m 3 -p 15180 -h trilby.ccs.neu.edu -f README`
+Sender is on gatsby sending README to trilby.ccs.neu.edu:15180
+with a window size of 3
+
+`./receiver -m 3 -p 15180 -h trilby.ccs.neu.edu`
+Receiver is on trilby waiting to receive a file
+with a window size of 3
 
 # Testing
 
@@ -17,3 +41,5 @@ Transferred file from trilby to gatsby
 Transferred file from turban to nightcap
 6. Test disconnecting
 Sender disconnected after retrying 10 times
+7. Test long file name
+Filename truncates to 254 characters before sending
