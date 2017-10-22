@@ -240,6 +240,7 @@ int main(int argc, char* argv[])
     arguments.port = "15180";
     arguments.hostname = "127.0.0.1";
     memset(arguments.filename, 0, MAX_FILENAME_LENGTH);
+    strcpy(arguments.filename, "README");
 
     static struct argp_option options[] = {
         {"mode", 'm', "MODE", 0, "Mode", 0},
