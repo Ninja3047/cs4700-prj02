@@ -148,13 +148,12 @@ void start_sender(int mode, const char* port, const char* hostname,
         memset(packet, 0, MAX_SEGMENT_SIZE);
         int ret = poll(&fds, 1, TIMEOUT);
         if (ret == -1) {
-            fprintf(stderr, "Weird polling error\n");
+            fprintf(stderr, "%s\n", strerror(errno));
         } else if (ret == 0) {
             if (retries > MAX_RETRIES) {
                 fprintf(stderr, "Error: Unable to reach receiver\n");
                 exit(EXIT_FAILURE);
             }
-            printf("Took longer than 500ms\n");
             retries++;
         } else {
             retries = 0;
@@ -180,10 +179,13 @@ void start_sender(int mode, const char* port, const char* hostname,
             long send_size = (size - offset < max_data_size) ? size % max_data_size : max_data_size;
             int sent = 0;
             printf("Sending %lu bytes\nOffset: %lu\n", send_size, offset);
+
             fseek(file, offset, SEEK_SET);
+
             char buf[send_size];
             memset(buf, 0, send_size);
             fread(buf, sizeof(char), send_size, file);
+
             if ((sent = send_data(sockfd, seq_num++, send_size, buf)) <= 0) {
                 fprintf(stderr, "Something went wrong went sending");
             }
@@ -219,9 +221,6 @@ static error_t parse_opt(int key, char* arg, struct argp_state* state) {
         case 'f':
             strncpy(arguments->filename, arg, MAX_FILENAME_LENGTH);
             break;
-        //case ARGP_KEY_END:
-        //    argp_usage(state);
-        //    break;
         default:
             return ARGP_ERR_UNKNOWN;
     }
