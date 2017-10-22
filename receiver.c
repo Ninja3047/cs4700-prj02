@@ -9,15 +9,12 @@ int send_ack(int sockfd, const struct sockaddr* dest_addr,
     struct ack ack;
     struct packet packet;
     memset(&ack, 0, sizeof(struct ack));
-    memset(&packet, 0, sizeof(struct packet));
+    memset(&packet, 0, sizeof(struct ack) + sizeof(char));
 
     ack.seq_num = seq_num;
 
     packet.type = ACK;
     packet.payload.ack = ack;
-
-    printf("Packet Type: %x\nSequence Number: %ld\n",
-            packet.type, packet.payload.ack.seq_num);
 
     return sendto(sockfd, &packet, sizeof(packet), 0,
                   dest_addr, addrlen);
