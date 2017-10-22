@@ -85,9 +85,6 @@ void start_receiver(int mode, const char* port, const char* hostname) {
                     // TODO handle weird file errors
                     offset = packet->payload.data.seq_num * max_data_size;
                     bytes = packet->payload.data.size;
-                    printf("Wrote %lu: %d at %lu\n",
-                           packet->payload.data.seq_num,
-                           packet->payload.data.size, offset);
                     fwrite(packet->payload.data.bytes, sizeof(char),
                            packet->payload.data.size, file);
                     fflush(file);

@@ -30,6 +30,7 @@ int send_init(int sockfd, const char filename[MAX_FILENAME_LENGTH],
 }
 
 // print packet
+// credit to piazza post 99
 void print_packet(const void *packet, int size) {
     char* bytes = (char*) packet;
 
@@ -79,7 +80,7 @@ int send_data(int sockfd, unsigned long seq_num, int size, char* bytes) {
     packet->type = DATA;
     memcpy(&packet->payload, data, sizeof(struct data) + size);
 
-    print_packet(packet, data_packet_size);
+    // print_packet(packet, data_packet_size);
 
     int sizesent = send(sockfd, packet, data_packet_size, 0);
     if (sizesent == -1) {
