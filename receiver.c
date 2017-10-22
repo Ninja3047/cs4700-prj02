@@ -17,7 +17,7 @@ int send_ack(int sockfd, const struct sockaddr* dest_addr,
 
     packet.type = ACK;
     packet.payload.ack = ack;
-    int sizesent = sendto(sockfd, &packet, sizeof(packet), 0,
+    int sizesent = sendto(sockfd, &packet, sizeof(struct ack) + sizeof(char), 0,
                           dest_addr, addrlen);
     if (sizesent == -1) {
         fprintf(stderr, "%s\n", strerror(errno));
