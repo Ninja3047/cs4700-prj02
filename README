@@ -4,16 +4,16 @@
 1. Test mismatched window sizes
 Receiver exits
 Sender exits after 3 retries
-2. Test sending the same ack every time
-3. Test randomly dropping packets
-4. Test sending image
+2. Test network errors
+Tested dropping packets randomly from the sender and receiver
+and also randomly duplicating acks and data packets
+3. Test sending image
 Sent a 200K image and ran a checksum
 to make sure the files matched
-5. Test sending large file
+4. Test sending large file
 Tested sending a 100MB file.
-Tested sending a 4GB file.
-6. Test different hosts
+5. Test different hosts
 Transferred file from trilby to gatsby
-7. Test disconnecting
-Sender disconnected after retrying 3 times
-8. 
+Transferred file from turban to nightcap
+6. Test disconnecting
+Sender disconnected after retrying 10 times
