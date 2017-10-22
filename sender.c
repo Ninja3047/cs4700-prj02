@@ -1,4 +1,5 @@
 #include <poll.h>
+#include <time.h>
 #include <argp.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -82,7 +83,7 @@ int send_data(int sockfd, unsigned long seq_num, int size, char* bytes) {
 
     int sizesent = send(sockfd, packet, data_packet_size, 0);
     if (sizesent == -1) {
-        fprintf(stderr, "Weird error\n");
+        fprintf(stderr, "%s\n", strerror(errno));
     }
 
     free(data);
@@ -127,7 +128,7 @@ void start_sender(int mode, const char* port, const char* hostname,
     // sequence number base
     unsigned long seq_base = 0;
     // sequence number max
-    unsigned long seq_max = mode;
+    unsigned long seq_max = mode + 1;
 
     struct pollfd fds;
     fds.fd = sockfd;
@@ -140,8 +141,9 @@ void start_sender(int mode, const char* port, const char* hostname,
     // create packet struct on the heap
     struct packet* packet = malloc(MAX_SEGMENT_SIZE);
 
-
     long max_data_size = MAX_SEGMENT_SIZE - sizeof(struct data) - sizeof(char);
+
+    srand(time(NULL));
 
     while (offset < size) {
         // Wait for ack here
@@ -186,9 +188,11 @@ void start_sender(int mode, const char* port, const char* hostname,
             memset(buf, 0, send_size);
             fread(buf, sizeof(char), send_size, file);
 
-            if ((sent = send_data(sockfd, seq_num++, send_size, buf)) <= 0) {
-                fprintf(stderr, "Something went wrong went sending");
-            }
+            // Randomly send the same data
+            //if (rand() % 10 == 0) {
+            //    send_data(sockfd, seq_num, send_size, buf);
+            //}
+            sent = send_data(sockfd, seq_num++, send_size, buf);
             printf("Sent %d bytes with seq: %lu\n", sent, seq_num);
         }
     }
