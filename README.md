@@ -1,3 +1,4 @@
+# Reliable File Transfer Over UDP
 # High Level Approach
 In this project, I first started out by defining the data
 I wanted to put in different types of packets by using structs.
@@ -10,7 +11,7 @@ buffer. Afterwards I implemented reading and writing files.
 Then I did command line arguments and tested by adding code to
 duplicate and drop packets randomly into the sender and receiver program.
 
-# How to use
+## How to use
 `./sender -m <mode> -p <port> -h <hostname> -f <filename>`
 Mode is an integer greater than 1 (defaults to 1)
 Port is a valid port number (defaults to 15180)
@@ -25,7 +26,7 @@ Port is a valid port number to listen on
 Hostname is the host to listen on (defaults to 127.0.0.1)
 This should match the hostname of the system you are on
 
-# Examples
+## Examples
 
 `./sender -m 3 -p 15180 -h trilby.ccs.neu.edu -f README`
 Sender is on gatsby sending README to trilby.ccs.neu.edu:15180
@@ -35,7 +36,7 @@ with a window size of 3
 Receiver is on trilby waiting to receive a file
 with a window size of 3
 
-# Testing
+## Testing
 
 1. Test mismatched window sizes
 Receiver exits
