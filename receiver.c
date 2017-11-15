@@ -81,8 +81,6 @@ void start_receiver(int mode, const char* port, const char* hostname) {
                 // only increase the sequence number if we got what we wanted
                 if (packet->payload.data.seq_num == next_seq_num) {
                     printf("Received Data Seq: %ld\n", packet->payload.data.seq_num);
-                    // Write to disk here
-                    // TODO handle weird file errors
                     offset = packet->payload.data.seq_num * max_data_size;
                     bytes = packet->payload.data.size;
                     fwrite(packet->payload.data.bytes, sizeof(char),
