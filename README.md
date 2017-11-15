@@ -1,5 +1,5 @@
 # Reliable File Transfer Over UDP
-# High Level Approach
+## High Level Approach
 In this project, I first started out by defining the data
 I wanted to put in different types of packets by using structs.
 This allowed me to easily visualize the data I am sending and
